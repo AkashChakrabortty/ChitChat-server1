@@ -15,14 +15,16 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run(){
   try{
-      const test = client.db('test').collection('testco');
-      const user = {
-        name: 'akash'
-      }
-      app.post('/in', async(req,res)=> {
-        const result = await test.insertOne(user);
+     const userCollection = client.db('chitchat').collection('user');
+
+     //insert every new user
+     app.post('/create', async(req,res)=> {
+        const user = req.body;
+        console.log(user)
+        const result = await userCollection.insertOne(user);
         res.send(result);
-      })
+     })
+     
   }
   catch{
     (err => console.log(err) )
@@ -31,10 +33,6 @@ async function run(){
 
 run().catch(err => console.log(err))
 
-
-app.get('/', (req,res)=> {
-    res.send('api found')
-})
 
 app.listen(port, ()=> {
     console.log('server running')

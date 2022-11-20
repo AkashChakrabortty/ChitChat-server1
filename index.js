@@ -16,13 +16,19 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run(){
   try{
      const userCollection = client.db('chitchat').collection('user');
-
+     const postCollection = client.db('chitchat').collection('post');
      //insert every new user
      app.post('/create', async(req,res)=> {
         const user = req.body;
-        console.log(user)
         const result = await userCollection.insertOne(user);
         res.send(result);
+     })
+
+     //insert user post
+     app.post('/post', async(req,res)=>{
+      const post = req.body;
+      const result = await postCollection.insertOne(post);
+      res.send(result);
      })
      
   }

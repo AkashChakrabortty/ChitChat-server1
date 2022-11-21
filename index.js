@@ -30,6 +30,13 @@ async function run(){
       const result = await postCollection.insertOne(post);
       res.send(result);
      })
+
+     //get user name
+     app.get('/user/:email', async(req,res)=>{
+      const email = req.email;
+      const result = await userCollection.findOne(email);
+      res.send(result);
+     })
      
   }
   catch{

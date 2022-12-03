@@ -33,11 +33,19 @@ async function run(){
 
      //get user name
      app.get('/user/:email', async(req,res)=>{
-      const email = req.email;
+      const email = req.params.email;
       const result = await userCollection.findOne(email);
       res.send(result);
      })
      
+      //get specific user's post
+      app.get('/post/:email', async(req,res)=>{
+        const email = req.params.email;
+        const query = {user_email: email}
+        const cursor = postCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+       })
   }
   catch{
     (err => console.log(err) )

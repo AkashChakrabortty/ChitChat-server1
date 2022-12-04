@@ -17,6 +17,7 @@ async function run(){
   try{
      const userCollection = client.db('chitchat').collection('user');
      const postCollection = client.db('chitchat').collection('post');
+     const storyCollection = client.db('chitchat').collection('story');
      //insert every new user
      app.post('/create', async(req,res)=> {
         const user = req.body;
@@ -30,7 +31,12 @@ async function run(){
       const result = await postCollection.insertOne(post);
       res.send(result);
      })
-
+      //insert user story
+      app.post('/story', async(req,res)=>{
+        const story = req.body;
+        const result = await storyCollection.insertOne(story);
+        res.send(result);
+       })
      //get user name
      app.get('/user/:email', async(req,res)=>{
       const email = req.params.email;
@@ -42,7 +48,16 @@ async function run(){
       app.get('/post/:email', async(req,res)=>{
         const email = req.params.email;
         const query = {user_email: email}
-        const cursor = postCollection.find(query);
+        const cursor = postCollection.find(query).sort( { "milliseconds": -1 } );
+        const result = await cursor.toArray();
+        res.send(result);
+       })
+
+        //get specific user's story
+      app.get('/story/:email', async(req,res)=>{
+        const email = req.params.email;
+        const query = {user_email: email}
+        const cursor = storyCollection.find(query).sort( { "milliseconds": -1 } );
         const result = await cursor.toArray();
         res.send(result);
        })

@@ -128,6 +128,15 @@ async function run() {
       const result = requestCollection.deleteOne(query);
       res.send(result);
     });
+
+     //delete friend
+     app.delete("/friendDeleted/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = friendCollection.deleteOne(query);
+      res.send(result);
+    });
+
     //   //get specific user's story
     // app.get('/story/:email', async(req,res)=>{
     //   const email = req.params.email;

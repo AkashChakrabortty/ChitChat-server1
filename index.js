@@ -60,8 +60,8 @@ async function run() {
       const reqAcceptedInfo = req.body;
       const id = req.params.id;
       const result = await friendCollection.insertOne(reqAcceptedInfo);
-      const query = {_id: ObjectId(id)}
-      const deleteFromReqCol = await requestCollection.deleteOne(query)
+      const query = { _id: ObjectId(id) };
+      const deleteFromReqCol = await requestCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -85,6 +85,15 @@ async function run() {
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
       const result = await userCollection.findOne(email);
+      res.send(result);
+    });
+
+    //get user's friends info
+    app.get("/friend/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {user_email:email} 
+      const cursor = friendCollection.find(query);
+      const result = await cursor.toArray();
       res.send(result);
     });
 

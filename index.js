@@ -34,6 +34,7 @@ async function run() {
     const storyCollection = client.db("chitchat").collection("story");
     const requestCollection = client.db("chitchat").collection("request");
     const friendCollection = client.db("chitchat").collection("friend");
+    const editCollection = client.db("chitchat").collection("edit");
 
     //insert every new user
     app.post("/create", async (req, res) => {
@@ -54,7 +55,57 @@ async function run() {
       const result = await storyCollection.insertOne(story);
       res.send(result);
     });
+    //insert user's edit
+    app.post("/edit/:email", async (req, res) => {
+      const edit = req.body;
+      const email = req.params.email;
+      // console.log(edit.name)
+      // console.log(edit.photoUrl)
+      const queryEdit = {email:email}
+      const deletePreviousEdit = await editCollection.deleteOne(queryEdit)
+      //update user collection
+      const queryUser = {email:email}
+      const updateUser = {
+        $set: {
+          name: `${edit.name}`,
+          photoUrl: `${edit.photoUrl}` ,
+        },
+      };
+      const updateNameFromUserCol = await userCollection.updateOne(queryUser,updateUser)
 
+      //update post collection
+      const queryPost = {user_email:email}
+      const updatePost = {
+        $set: {
+          user_name: `${edit.name}`,
+          user_photo: `${edit.photoUrl}`,
+        },
+      };
+      const updateNameFromPostCol = await postCollection.updateMany(queryPost,updatePost)
+
+       //update story collection
+       const queryStory = {user_email:email}
+       const updateStory = {
+         $set: {
+           user_name: `${edit.name}`,
+           user_photo: `${edit.photoUrl}`,
+         },
+       };
+       const updateNameFromStoryCol = await storyCollection.updateMany(queryStory,updateStory)
+
+        //update friend collection
+        const queryFriend = {user_email:email}
+        const updateFriend = {
+          $set: {
+            user_name: `${edit.name}`
+          },
+        };
+        const updateNameFromFriendCol = await friendCollection.updateMany(queryFriend,updateFriend)
+
+
+      const result = await editCollection.insertOne(edit);
+      res.send(result);
+    });
     //insert every accepted friend request
     app.post("/reqAccepted/:id", async (req, res) => {
       const reqAcceptedInfo = req.body;
@@ -81,17 +132,33 @@ async function run() {
         res.send(result1);
       }
     });
-    //get user name
-    app.get("/user/:email", async (req, res) => {
+    //get user photo
+    app.get("/userPhoto/:email", async (req, res) => {
       const email = req.params.email;
-      const result = await userCollection.findOne(email);
+      const query = { email: email };
+      const result = await userCollection.findOne(query);
       res.send(result);
     });
+
+     //get user's edit profile ingo
+     app.get("/profileInfo/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await editCollection.findOne(query);
+      res.send(result);
+    });
+
+    // //get user name
+    // app.get("/user/:email", async (req, res) => {
+    //   const email = req.params.email;
+    //   const result = await userCollection.findOne(email);
+    //   res.send(result);
+    // });
 
     //get user's friends info
     app.get("/friend/:email", async (req, res) => {
       const email = req.params.email;
-      const query = {user_email:email} 
+      const query = { user_email: email };
       const cursor = friendCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
@@ -129,8 +196,8 @@ async function run() {
       res.send(result);
     });
 
-     //delete friend
-     app.delete("/friendDeleted/:id", async (req, res) => {
+    //delete friend
+    app.delete("/friendDeleted/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = friendCollection.deleteOne(query);

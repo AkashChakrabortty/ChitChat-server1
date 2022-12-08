@@ -15,7 +15,7 @@ app.use(express.json());
 const io = new Server(expressServer, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST", "DELETE"],
+    methods: ["GET", "POST", "DELETE",'PATCH'],
   },
 });
 
@@ -35,6 +35,7 @@ async function run() {
     const requestCollection = client.db("chitchat").collection("request");
     const friendCollection = client.db("chitchat").collection("friend");
     const editCollection = client.db("chitchat").collection("edit");
+    const likeCollection = client.db("chitchat").collection("like");
 
     //insert every new user
     app.post("/create", async (req, res) => {
@@ -55,6 +56,27 @@ async function run() {
       const result = await storyCollection.insertOne(story);
       res.send(result);
     });
+
+     //insert user's like
+     app.patch("/like/:id", async (req, res) => {
+      // const like = req.body;
+      // const id = like.previousId;
+      // const updateLike = 
+      // const result = await likeCollection.insertOne(like);
+      // res.send(result);
+      const like = req.body;
+      const id = req.params.id;
+      // console.log(like.islike)
+      const query = {_id : ObjectId(id)}
+      const ownerLike = {
+        $set: {
+          ownerLike: like.like
+        },
+      };
+      const result = await postCollection.updateOne(query,ownerLike)
+      res.send(result);
+    });
+
     //insert user's edit
     app.post("/edit/:email", async (req, res) => {
       const edit = req.body;

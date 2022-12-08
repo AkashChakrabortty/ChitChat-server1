@@ -102,6 +102,15 @@ async function run() {
         };
         const updateNameFromFriendCol = await friendCollection.updateMany(queryFriend,updateFriend)
 
+        //  //update request collection
+        //  const queryRequest = {rece_email:email}
+        //  const updateFriend = {
+        //    $set: {
+        //      user_name: `${edit.name}`
+        //    },
+        //  };
+        //  const updateNameFromFriendCol = await friendCollection.updateMany(queryFriend,updateFriend)
+
 
       const result = await editCollection.insertOne(edit);
       res.send(result);
@@ -162,6 +171,57 @@ async function run() {
       const cursor = friendCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+     //get user's friends post
+     app.get("/friendsPost/:email", async (req, res) => {
+      const email = req.params.email;
+      let friendArray;
+
+       //find all posts
+       const cursor = postCollection.find({}).sort({ milliseconds: -1 });
+       const allPostArray = await cursor.toArray();
+       const result = [];
+
+      //find user friends
+      const findFriendQuery = { user_email: email };
+      const cursorFriend = friendCollection.find(findFriendQuery);
+      const array1 = await cursorFriend.toArray();
+     
+
+      if(array1.length==0){
+        const findFriendQuery = { friend_email: email };
+        const cursorFriend = friendCollection.find(findFriendQuery);
+        const array2 = await cursorFriend.toArray();
+        friendArray = array2;
+
+        //filter post array sothat only get friends post
+       const friendsPost = await allPostArray.filter(freindCheck)
+      
+       function freindCheck(post) {
+         friendArray.map((element)=>{
+           if( element.user_email === post.user_email){
+             result.push(post)
+           }
+         })
+       }
+      }
+      else{
+        friendArray = array1;
+        //filter post array sothat only get friends post
+       const friendsPost = await allPostArray.filter(freindCheck)
+      
+       function freindCheck(post) {
+         friendArray.map((element)=>{
+           if( element.friend_email === post.user_email){
+             result.push(post)
+           }
+         })
+       }
+      }
+      // console.log(friendArray)
+
+      res.send(result)
     });
 
     //get all users

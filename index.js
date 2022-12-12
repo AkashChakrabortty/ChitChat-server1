@@ -57,16 +57,10 @@ async function run() {
       res.send(result);
     });
 
-     //insert user's like
+     //insert own user's like
      app.patch("/like/:id", async (req, res) => {
-      // const like = req.body;
-      // const id = like.previousId;
-      // const updateLike = 
-      // const result = await likeCollection.insertOne(like);
-      // res.send(result);
       const like = req.body;
       const id = req.params.id;
-      // console.log(like.islike)
       const query = {_id : ObjectId(id)}
       const ownerLike = {
         $set: {
@@ -76,6 +70,38 @@ async function run() {
       const result = await postCollection.updateOne(query,ownerLike)
       res.send(result);
     });
+
+    //insert user's like to his friends post
+    app.post("/friendPostLike", async (req, res) => {
+       
+      const likeInfo = req.body;
+      // console.log(likeInfo)
+      const query = {
+        previous_id:likeInfo.previous_id,
+        like_giver_email: likeInfo.like_giver_email 
+      };
+      const result = await likeCollection.findOne(query);
+      // console.log(result)
+      if (result) {
+        const deleteLike = await likeCollection.deleteOne(query)
+        // res.send(deleteLike);
+        res.send({ acknowledged: false });
+      } else {
+        const result1 = await likeCollection.insertOne(likeInfo);
+        res.send(result1);
+      }
+      // const like = req.body;
+      // const id = req.params.id;
+      // const query = {_id : ObjectId(id)}
+      // const ownerLike = {
+      //   $set: {
+      //     ownerLike: like.like
+      //   },
+      // };
+      // const result = await postCollection.updateOne(query,ownerLike)
+      // res.send(result);
+    });
+
 
     //insert user's edit
     app.post("/edit/:email", async (req, res) => {
@@ -199,15 +225,22 @@ async function run() {
      app.get("/friendsPost/:email", async (req, res) => {
       const email = req.params.email;
       const startIndex = req.query.startIndex;
-      console.log(startIndex)
+     
      
       let friendArray;
-
+ 
        //find all posts
        const cursor = postCollection.find({}).sort({ milliseconds: -1 });
        const allPostArray = await cursor.toArray();
        const result = [];
 
+       //find if user all like
+       const likeCheckQuery = {
+        like_giver_email: email 
+      }
+      const cursorlike = likeCollection.find(likeCheckQuery);
+      const allLikeArray = await cursorlike.toArray();
+    
       //find user friends
       const findFriendQuery = { user_email: email };
       const cursorFriend = friendCollection.find(findFriendQuery);
@@ -215,49 +248,74 @@ async function run() {
      
 
       if(array1.length==0){
+      
         const findFriendQuery = { friend_email: email };
         const cursorFriend = friendCollection.find(findFriendQuery);
         const array2 = await cursorFriend.toArray();
         friendArray = array2;
 
         //filter post array sothat only get friends post
-       const friendsPost = await allPostArray.filter(freindCheck)
+       const friendsPost =  allPostArray.filter(freindCheck)
       
-       function freindCheck(post) {
+     
+       function freindCheck (post) {
          friendArray.map((element)=>{
            if( element.user_email === post.user_email){
+            // console.log(post)
+
+              //find post id
+              const id = post._id;
+              const stringId = JSON.stringify(id)
+              const exactId = stringId.slice(1,-1);
+          
+            //check if user give like in specific post sothat show blue mark perfectly
+             allLikeArray.map( (element) => {
+              console.log(element)
+              if(element.previous_id===post._id){
+                post.ownerLike = true
+                result.push(post)
+              }
+             } )
              result.push(post)
            }
          })
        }
-      }
+      } 
       else{
+       
         friendArray = array1;
+       
         //filter post array sothat only get friends post
-       const friendsPost = await allPostArray.filter(freindCheck)
+       const friendsPost =  allPostArray.filter(freindCheck)
       
        function freindCheck(post) {
          friendArray.map((element)=>{
            if( element.friend_email === post.user_email){
+            
+            //find post id
+            const id = post._id;
+            const stringId = JSON.stringify(id)
+            const exactId = stringId.slice(1,-1);
+
+            //check if user give like in specific post sothat show blue mark perfectly
+           
+            allLikeArray.map( (element) => {
+              
+              if(element.previous_id===exactId){
+                post.ownerLike = true
+              }
+             
+             } )
              result.push(post)
            }
-         })
+         }) 
        }
       }
 
       const limitArray = [];
-      // if(startIndex === 'last'){
-      //   for(let i = result.length-2 ; i< result.length ; i++){
-      //     limitArray.push(result[i]); 
-      //   }
-      // }
-      // else{
-      //   for(let i = startIndex ; i< startIndex + 2 ; i++){
-      //     limitArray.push(result[i]); 
-      //   }
-      // }
+     
       for(let i = startIndex ; i < (startIndex + 2) ; i++){
-        // console.log(i)
+      
         if (i> (startIndex + 2)){
           break;
         }
@@ -266,12 +324,15 @@ async function run() {
         }
         }
       const total = result.length;
-      // console.log(friendArray)
+      // console.log(result)
+      // console.log(total)
       
       const filterLimitArray = limitArray.filter(Boolean);
-      console.log(filterLimitArray)
+     
       res.send({filterLimitArray,total})
     });
+
+    
 
     //get all users
     app.get("/peoples", async (req, res) => {

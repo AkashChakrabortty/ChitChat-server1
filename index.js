@@ -198,6 +198,9 @@ async function run() {
      //get user's friends post
      app.get("/friendsPost/:email", async (req, res) => {
       const email = req.params.email;
+      const startIndex = req.query.startIndex;
+      console.log(startIndex)
+     
       let friendArray;
 
        //find all posts
@@ -241,9 +244,33 @@ async function run() {
          })
        }
       }
-      // console.log(friendArray)
 
-      res.send(result)
+      const limitArray = [];
+      // if(startIndex === 'last'){
+      //   for(let i = result.length-2 ; i< result.length ; i++){
+      //     limitArray.push(result[i]); 
+      //   }
+      // }
+      // else{
+      //   for(let i = startIndex ; i< startIndex + 2 ; i++){
+      //     limitArray.push(result[i]); 
+      //   }
+      // }
+      for(let i = startIndex ; i < (startIndex + 2) ; i++){
+        // console.log(i)
+        if (i> (startIndex + 2)){
+          break;
+        }
+        else{
+          limitArray.push(result[i]);
+        }
+        }
+      const total = result.length;
+      // console.log(friendArray)
+      
+      const filterLimitArray = limitArray.filter(Boolean);
+      console.log(filterLimitArray)
+      res.send({filterLimitArray,total})
     });
 
     //get all users

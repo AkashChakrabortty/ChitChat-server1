@@ -262,8 +262,7 @@ async function run() {
       const cursorFriend = friendCollection.find(findFriendQuery);
       const array1 = await cursorFriend.toArray();
 
-      //check how many likes get of a single post
-
+      //find all likes 
       const cursorTotalLike = likeCollection.find({});
       const arrayTotalLike = await cursorTotalLike.toArray();
 
@@ -366,6 +365,10 @@ async function run() {
       const email = req.params.email;
       const query = { user_email: email };
 
+      //find all likes
+      const cursorTotalLike = likeCollection.find({});
+      const arrayTotalLike = await cursorTotalLike.toArray();
+
       //find user all post
       const cursorAllPost = postCollection
         .find(query)
@@ -387,6 +390,13 @@ async function run() {
         const id = singlePost._id;
         const stringId = JSON.stringify(id);
         const exactId = stringId.slice(1, -1);
+
+         singlePost.totalLikes = [];
+         arrayTotalLike.map((singleLike) => {
+           if (singleLike.previous_id === exactId) {
+             singlePost.totalLikes.push(singleLike);
+           }
+         });
         //check if user give like in specific post sothat show blue mark perfectly
         allLikeArray.map((element) => {
           if (element.previous_id === exactId) {

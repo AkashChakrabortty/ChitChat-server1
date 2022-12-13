@@ -232,9 +232,18 @@ async function run() {
     //get user's friends info
     app.get("/friend/:email", async (req, res) => {
       const email = req.params.email;
-      const query = { user_email: email };
-      const cursor = friendCollection.find(query);
-      const result = await cursor.toArray();
+      let result;
+      //find user friends
+      const findFriendQuery = { user_email: email };
+      const cursorFriend = friendCollection.find(findFriendQuery);
+      const array1 = await cursorFriend.toArray();
+      result = array1;
+       if (array1.length == 0) {
+         const findFriendQuery = { friend_email: email };
+         const cursorFriend = friendCollection.find(findFriendQuery);
+         const array2 = await cursorFriend.toArray();
+         result = array2;
+       } 
       res.send(result);
     });
 

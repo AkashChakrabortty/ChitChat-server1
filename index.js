@@ -5,6 +5,7 @@ require("dotenv").config();
 const { Server } = require("socket.io");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { disconnect } = require("process");
+
 const app = express();
 const port = process.env.PORT || 5000;
 const expressServer = http.createServer(app);
@@ -37,11 +38,17 @@ async function run() {
     const editCollection = client.db("chitchat").collection("edit");
     const likeCollection = client.db("chitchat").collection("like");
     const commentCollection = client.db("chitchat").collection("comment");
-
+    const chatCollection = client.db("chitchat").collection("chat");
     //insert every new user
     app.post("/create", async (req, res) => {
       const user = req.body;
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+    //insert chat
+    app.post("/chatstore", async (req, res) => {
+      const chatInfo = req.body;
+      const result = await chatCollection.insertOne(chatInfo);
       res.send(result);
     });
 
@@ -206,11 +213,35 @@ async function run() {
         res.send(result1);
       }
     });
+    //get chat photo
+    app.get("/chatinfo/:room", async (req, res) => {
+      const room = req.params.room;
+      const query = { room: room };
+      const result = await chatCollection.findOne(query);
+      res.send(result);
+    });
     //get user photo
     app.get("/userPhoto/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+    //get chat photo
+    app.get("/getChat/:room", async (req, res) => {
+      const room = req.params.room;
+      // console.log(room)
+      const query = { room: room };
+      const cursor = chatCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //get single friend info
+    app.get("/single_friend/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await friendCollection.findOne(query);
       res.send(result);
     });
 
@@ -242,6 +273,22 @@ async function run() {
         const findFriendQuery = { friend_email: email };
         const cursorFriend = friendCollection.find(findFriendQuery);
         const array2 = await cursorFriend.toArray();
+        array2.forEach((friend) => {
+          let emailSwap;
+          emailSwap = friend.user_email;
+          friend.user_email = friend.friend_email;
+          friend.friend_email = emailSwap;
+
+          let nameSwap;
+          nameSwap = friend.user_name;
+          friend.user_name = friend.friend_name;
+          friend.friend_name = nameSwap;
+
+          let photoSwap;
+          photoSwap = friend.user_photo;
+          friend.user_photo = friend.friend_photo;
+          friend.friend_photo = photoSwap;
+        });
         result = array2;
       }
       res.send(result);
@@ -495,7 +542,6 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
-
     //delete friend request
     app.delete("/reqDelete/:id", async (req, res) => {
       const id = req.params.id;
@@ -512,13 +558,86 @@ async function run() {
       res.send(result);
     });
 
-    //   //get specific user's story
-    // app.get('/story/:email', async(req,res)=>{
-    //   const email = req.params.email;
-    //   const query = {user_email: email}
-    //   const cursor = storyCollection.find(query).sort( { "milliseconds": -1 } );
-    //   const result = await cursor.toArray();
-    //   res.send(result);
+    // io.on("connection", (socket) => {
+    //   // socket.on("active", async (activeUserInfo) => {
+
+    //   //   // create a filter
+    //   //   const filter = { email: activeUserInfo.email };
+    //   //   // this option instructs the method to create a document if no documents match the filter
+    //   //   const options = { upsert: true };
+    //   //   // create a document that sets the active user
+    //   //   const updateDoc = {
+    //   //     $set: {
+    //   //       user: activeUserInfo,
+    //   //     },
+    //   //   };
+    //   //   const result = await activeCollection.updateOne(
+    //   //     filter,
+    //   //     updateDoc,
+    //   //     options
+    //   //   );
+
+    //   //   let activeFriends = [];
+    //   //   let totalActiveFriends;
+    //   //   //find how many friends active
+    //   //   const findFriendQuery = { user_email: activeUserInfo.email };
+    //   //   const cursorFriend = friendCollection.find(findFriendQuery);
+    //   //   const array1 = await cursorFriend.toArray();
+    //   //   activeFriends = array1;
+
+    //   //   if (array1.length == 0) {
+    //   //     const findFriendQuery = { friend_email: activeUserInfo.email };
+    //   //     const cursorFriend = friendCollection.find(findFriendQuery);
+    //   //     const array2 = await cursorFriend.toArray();
+    //   //     activeFriends = array2;
+    //   //   }
+    //   //   totalActiveFriends = activeFriends.length;
+
+    //   //  socket.send({ totalActiveFriends, activeFriends });
+    //   // });
+    //   // socket.send("akash out");
+    //   // socket.on("activeFriends", async(email) => {
+    //   //   const activeQuery = {email:email}
+    //   //   const cursor = activeCollection.find(activeQuery);
+    //   //   const result = await cursor.toArray();
+    //   //   socket.send(result);
+    //   // });
+
+    //   //  socket.on("active", async (activeUserInfo) => {
+    //   //     socket.send(activeUserInfo);
+    //   //  } );
+    //   // socket.on("chat", async(info) => {
+    //   //   // io.emit("chat_transfer", info);
+    //   //   // socket.send(info)
+    //   //   const allRoom = [];
+    //   //   const cursor = friendCollection.find({});
+    //   //   const result = await cursor.toArray();
+
+    //   //   result.forEach((singleValue)=> {
+    //   //       const id = singleValue._id;
+    //   //       const stringId = JSON.stringify(id);
+    //   //       const exactId = stringId.slice(1, -1);
+    //   //      allRoom.push(exactId);
+    //   //   })
+    //     // console.log(allRoom)
+    //     // console.log(info);
+    // //     socket.join(`chat_transfer`);
+    // //     // let room;
+    // //     // allRoom.forEach()
+    // //     io.sockets.in(`chat_transfer`).emit(`akash`, info);
+    // //     // console.log(info.room);
+    // //   });
+
+    // //   socket.on("disconnect", () => {});
+    // // });
+
+    // //   //get specific user's story
+    // // app.get('/story/:email', async(req,res)=>{
+    // //   const email = req.params.email;
+    // //   const query = {user_email: email}
+    // //   const cursor = storyCollection.find(query).sort( { "milliseconds": -1 } );
+    // //   const result = await cursor.toArray();
+    // //   res.send(result);
     //  })
   } catch {
     (err) => console.log(err);
@@ -527,18 +646,7 @@ async function run() {
 
 run().catch((err) => console.log(err));
 
-// app.listen(port, ()=> {
-//     console.log('server running')
-// })
-
-io.on("connection", (socket) => {
-  console.log("a user connected");
-
-  socket.on("disconnect", () => {
-    console.log("user disconnect");
-  });
-});
 
 expressServer.listen(port, () => {
-  console.log(`socket server running${port}`);
+  console.log(`socket server running ${port}`);
 });

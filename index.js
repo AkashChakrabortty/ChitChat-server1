@@ -1,24 +1,12 @@
 const express = require("express");
 const cors = require("cors");
-const http = require("http");
 require("dotenv").config();
-const { Server } = require("socket.io");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const { disconnect } = require("process");
-
 const app = express();
 const port = process.env.PORT || 5000;
-const expressServer = http.createServer(app);
 //middle wares
 app.use(cors());
 app.use(express.json());
-
-const io = new Server(expressServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST", "DELETE", "PATCH"],
-  },
-});
 
 // mongo
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.kusbv.mongodb.net/?retryWrites=true&w=majority`;
@@ -89,39 +77,25 @@ async function run() {
     //insert user's like to his friends post
     app.post("/friendPostLike", async (req, res) => {
       const likeInfo = req.body;
-      // console.log(likeInfo)
       const query = {
         previous_id: likeInfo.previous_id,
         like_giver_email: likeInfo.like_giver_email,
       };
       const result = await likeCollection.findOne(query);
-      // console.log(result)
       if (result) {
         const deleteLike = await likeCollection.deleteOne(query);
-        // res.send(deleteLike);
         res.send({ acknowledged: false });
       } else {
         const result1 = await likeCollection.insertOne(likeInfo);
         res.send(result1);
       }
-      // const like = req.body;
-      // const id = req.params.id;
-      // const query = {_id : ObjectId(id)}
-      // const ownerLike = {
-      //   $set: {
-      //     ownerLike: like.like
-      //   },
-      // };
-      // const result = await postCollection.updateOne(query,ownerLike)
-      // res.send(result);
+
     });
 
     //insert user's edit
     app.post("/edit/:email", async (req, res) => {
       const edit = req.body;
       const email = req.params.email;
-      // console.log(edit.name)
-      // console.log(edit.photoUrl)
       const queryEdit = { email: email };
       const deletePreviousEdit = await editCollection.deleteOne(queryEdit);
       //update user collection
@@ -174,15 +148,6 @@ async function run() {
         queryFriend,
         updateFriend
       );
-
-      //  //update request collection
-      //  const queryRequest = {rece_email:email}
-      //  const updateFriend = {
-      //    $set: {
-      //      user_name: `${edit.name}`
-      //    },
-      //  };
-      //  const updateNameFromFriendCol = await friendCollection.updateMany(queryFriend,updateFriend)
 
       const result = await editCollection.insertOne(edit);
       res.send(result);
@@ -252,13 +217,6 @@ async function run() {
       const result = await editCollection.findOne(query);
       res.send(result);
     });
-
-    // //get user name
-    // app.get("/user/:email", async (req, res) => {
-    //   const email = req.params.email;
-    //   const result = await userCollection.findOne(email);
-    //   res.send(result);
-    // });
 
     //get user's friends info
     app.get("/friend/:email", async (req, res) => {
@@ -334,7 +292,6 @@ async function run() {
         function freindCheck(post) {
           friendArray.map((element) => {
             if (element.user_email === post.user_email) {
-              // console.log(post)
 
               //find post id
               const id = post._id;
@@ -349,7 +306,6 @@ async function run() {
               });
               //check if user give like in specific post sothat show blue mark perfectly
               allLikeArray.map((element) => {
-                // console.log(element);
                 if (element.previous_id === post._id) {
                   post.ownerLike = true;
                   result.push(post);
@@ -361,7 +317,6 @@ async function run() {
         }
       } else {
         friendArray = array1;
-        // console.log('else')
         const freindCheck = async (post) => {
           friendArray.map((element) => {
             if (element.friend_email === post.user_email) {
@@ -369,7 +324,6 @@ async function run() {
               const id = post._id;
               const stringId = JSON.stringify(id);
               const exactId = stringId.slice(1, -1);
-              // console.log("exactId===", exactId, "post===", post);
               post.totalLikes = [];
               arrayTotalLike.map((singleLike) => {
                 if (singleLike.previous_id === exactId) {
@@ -377,7 +331,6 @@ async function run() {
                 }
               });
               //check if user give like in specific post sothat show blue mark perfectly
-
               allLikeArray.map((element) => {
                 if (element.previous_id === exactId) {
                   post.ownerLike = true;
@@ -401,11 +354,7 @@ async function run() {
         }
       }
       const total = result.length;
-      // console.log(result)
-      // console.log(total)
-
       const filterLimitArray = limitArray.filter(Boolean);
-
       res.send({ filterLimitArray, total });
     });
 
@@ -421,7 +370,6 @@ async function run() {
     app.get("/likes/:email", async (req, res) => {
       const email = req.params.email;
       const startIndex = req.query.startIndex;
-      // console.log(startIndex);
       //find all likes
       const likesQuery = { like_giver_email: email };
       const likesCursor = likeCollection
@@ -439,11 +387,7 @@ async function run() {
         }
       }
       const total = allLikesArray.length;
-      // console.log(result)
-      // console.log(total)
-
       const filterLimitArray = limitArray.filter(Boolean);
-
       res.send({ filterLimitArray, total });
     });
 
@@ -451,7 +395,6 @@ async function run() {
     app.get("/comments/:email", async (req, res) => {
       const email = req.params.email;
       const startIndex = req.query.startIndex;
-      // console.log(startIndex);
       //find all comments
       const commentsQuery = { comment_giver_email: email };
       const commentsCursor = commentCollection
@@ -469,11 +412,7 @@ async function run() {
         }
       }
       const total = allcommentsArray.length;
-      // console.log(result)
-      // console.log(total)
-
       const filterLimitArray = limitArray.filter(Boolean);
-
       res.send({ filterLimitArray, total });
     });
 
@@ -522,7 +461,6 @@ async function run() {
         });
         result.push(singlePost);
       }
-
       res.send(result);
     });
     //get specific user's friend request
@@ -557,88 +495,6 @@ async function run() {
       const result = friendCollection.deleteOne(query);
       res.send(result);
     });
-
-    // io.on("connection", (socket) => {
-    //   // socket.on("active", async (activeUserInfo) => {
-
-    //   //   // create a filter
-    //   //   const filter = { email: activeUserInfo.email };
-    //   //   // this option instructs the method to create a document if no documents match the filter
-    //   //   const options = { upsert: true };
-    //   //   // create a document that sets the active user
-    //   //   const updateDoc = {
-    //   //     $set: {
-    //   //       user: activeUserInfo,
-    //   //     },
-    //   //   };
-    //   //   const result = await activeCollection.updateOne(
-    //   //     filter,
-    //   //     updateDoc,
-    //   //     options
-    //   //   );
-
-    //   //   let activeFriends = [];
-    //   //   let totalActiveFriends;
-    //   //   //find how many friends active
-    //   //   const findFriendQuery = { user_email: activeUserInfo.email };
-    //   //   const cursorFriend = friendCollection.find(findFriendQuery);
-    //   //   const array1 = await cursorFriend.toArray();
-    //   //   activeFriends = array1;
-
-    //   //   if (array1.length == 0) {
-    //   //     const findFriendQuery = { friend_email: activeUserInfo.email };
-    //   //     const cursorFriend = friendCollection.find(findFriendQuery);
-    //   //     const array2 = await cursorFriend.toArray();
-    //   //     activeFriends = array2;
-    //   //   }
-    //   //   totalActiveFriends = activeFriends.length;
-
-    //   //  socket.send({ totalActiveFriends, activeFriends });
-    //   // });
-    //   // socket.send("akash out");
-    //   // socket.on("activeFriends", async(email) => {
-    //   //   const activeQuery = {email:email}
-    //   //   const cursor = activeCollection.find(activeQuery);
-    //   //   const result = await cursor.toArray();
-    //   //   socket.send(result);
-    //   // });
-
-    //   //  socket.on("active", async (activeUserInfo) => {
-    //   //     socket.send(activeUserInfo);
-    //   //  } );
-    //   // socket.on("chat", async(info) => {
-    //   //   // io.emit("chat_transfer", info);
-    //   //   // socket.send(info)
-    //   //   const allRoom = [];
-    //   //   const cursor = friendCollection.find({});
-    //   //   const result = await cursor.toArray();
-
-    //   //   result.forEach((singleValue)=> {
-    //   //       const id = singleValue._id;
-    //   //       const stringId = JSON.stringify(id);
-    //   //       const exactId = stringId.slice(1, -1);
-    //   //      allRoom.push(exactId);
-    //   //   })
-    //     // console.log(allRoom)
-    //     // console.log(info);
-    // //     socket.join(`chat_transfer`);
-    // //     // let room;
-    // //     // allRoom.forEach()
-    // //     io.sockets.in(`chat_transfer`).emit(`akash`, info);
-    // //     // console.log(info.room);
-    // //   });
-
-    // //   socket.on("disconnect", () => {});
-    // // });
-
-    // //   //get specific user's story
-    // // app.get('/story/:email', async(req,res)=>{
-    // //   const email = req.params.email;
-    // //   const query = {user_email: email}
-    // //   const cursor = storyCollection.find(query).sort( { "milliseconds": -1 } );
-    // //   const result = await cursor.toArray();
-    // //   res.send(result);
-    //  })
   } catch {
     (err) => console.log(err);
   }
@@ -646,7 +502,10 @@ async function run() {
 
 run().catch((err) => console.log(err));
 
+app.get("/", (req, res) => {
+  res.send("api found");
+});
 
-expressServer.listen(port, () => {
-  console.log(`socket server running ${port}`);
+app.listen(port, () => {
+  console.log(`server running ${port}`);
 });
